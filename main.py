@@ -3,6 +3,7 @@ import os
 import numpy as np
 # import openai
 from sentence_transformers import SentenceTransformer
+import ast
 
 # file to store notes
 notes_file = "notes.csv"
@@ -23,10 +24,14 @@ def save_note(note):
 
 
 # function to load all notes
-def load_notes():
+def load_notes_with_embeddings():
+    '''Load notes and embeddings back into python objects'''
     if os.path.exists(notes_file):
-        return pd.read_csv(notes_file)["note"].to_list()
-    return[]
+        df = pd.read_csv(notes_file)
+        # convert embedding column back to Numpy arrays
+        df['embedding'] = df["embedding"].apply(lambda x : np.array(ast.literal_eval(x)))
+        return df
+    return pd.DataFrame(columns=["note","embedding" ])
 
 # Quick test
 # save_note("Buy groceries: milk, eggs, bread")
@@ -76,7 +81,8 @@ def save_note_with_embedding(note):
     if os.path.exists(notes_file):
         try:
             df_existing = pd.read_csv(notes_file)
-            df_existing = pd.concat([df_existing, df], ignore_index=True)
+            df_existing['embedding']= df['embedding'].apply(lambda x : np.array(ast.literal_eval(x)))
+            df_existing= pd.concat([df_existing, df], ignore_index=True), 
         except pd.errors.EmptyDataError:
             df_existing = df
         df_existing.to_csv(notes_file, index=False)
